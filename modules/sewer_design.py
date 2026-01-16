@@ -118,3 +118,22 @@ def estimate_pipe_diameter(
         d += step
 
     raise ValueError("Diameter maksimum tidak cukup")
+
+def check_pipe_capacity_standard_pu(Q_design, Q_pipe_full):
+    """
+    Evaluasi Kapasitas dengan kriteria Freeboard (Permen PUPR 12/2014)
+    """
+    ratio = Q_design / Q_pipe_full
+    
+    if ratio <= 0.8:
+        status = "✅ AMAN (Memenuhi syarat Freeboard)"
+    elif ratio <= 1.0:
+        status = "⚠️ KRITIS (Tanpa Freeboard, risiko luapan tinggi)"
+    else:
+        status = "❌ TIDAK AMAN (Kapasitas terlampaui)"
+        
+    return {
+        "ratio": ratio,
+        "status": status,
+        "recommended": "Ok" if ratio <= 0.8 else "Perbesar Diameter"
+    }
