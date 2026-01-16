@@ -8,6 +8,9 @@ import pandas as pd
 import json
 import os
 import matplotlib.pyplot as plt
+import os
+if not os.path.exists("data"):
+    os.makedirs("data")
 
 # -----------------------------
 # IMPORT MODULE ENGINE
@@ -235,3 +238,4 @@ elif menu == "Save / Open Project":
     if st.button("📂 Open Project"):
         project = load_project()
         st.json(project)
+
