@@ -2,6 +2,36 @@
 import pandas as pd
 import numpy as np
 
+from scipy.stats import pearson3
+
+def log_pearson_3(data_series, return_periods=[2, 5, 10, 25, 50, 100]):
+    """
+    Menghitung Hujan Rencana Log Pearson III (SNI 2415:2016)
+    """
+    log_data = np.log10(data_series)
+    mean = np.mean(log_data)
+    std = np.std(log_data, ddof=1)
+    skew = pd.Series(log_data).skew()
+    
+    results = {}
+    for T in return_periods:
+        # Sederhananya menggunakan K-table approximation atau scipy
+        prob = 1 / T
+        # Mencari nilai K berdasarkan skewness dan probabilitas
+        # Catatan: Scipy pearson3 menggunakan parameter berbeda, 
+        # Untuk implementasi PU yang presisi, disarankan menggunakan tabel K-faktor statis.
+        k = pearson3.ppf(1 - prob, skew) 
+        log_rt = mean + k * std
+        results[T] = 10**log_rt
+        
+    return results
+
+def mononobe_intensity(r24, tc_min):
+    """
+    Rumus Mononobe untuk Intensitas Hujan (Standard PU)
+    """
+    return (r24 / 24) * (24 / (tc_min / 60))**(2/3)
+
 
 def rainfall_manual(
     rainfall_mm: list,
@@ -104,3 +134,4 @@ def rainfall_summary(df):
         "max_intensity_mm_hr": df["rainfall_mm"].max() * 60 / (df["time_min"].diff().mean()),
         "duration_min": df["time_min"].max()
     }
+
