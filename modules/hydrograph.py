@@ -1,6 +1,54 @@
 # modules/hydrograph.py
 import numpy as np
 import pandas as pd
+# modules/hydrograph.py (Update)
+import numpy as np
+import pandas as pd
+
+def hss_nakayasu(area_ha, L_km, tg_hour=None, alpha=2.0, tr_hour=None, dt_min=10):
+    """
+    Implementasi Hidrograf Satuan Sintetik Nakayasu (Standar SNI)
+    """
+    area_km2 = area_ha / 100
+    
+    # 1. Menghitung Time Lag (tg) jika tidak diinput
+    if tg_hour is None:
+        if L_km < 15:
+            tg = 0.21 * (L_km**0.7)
+        else:
+            tg = 0.4 + 0.058 * L_km
+    else:
+        tg = tg_hour
+
+    # 2. Parameter Waktu
+    tr = 0.75 * tg if tr_hour is None else tr_hour # Durasi hujan efektif
+    tp = tg + 0.8 * tr                            # Time to peak
+    t03 = alpha * tg                              # Time to 0.3 peak
+    
+    # 3. Debit Puncak (Qp) per 1 mm hujan
+    qp = (area_km2) / (3.6 * (0.3 * tp + t03))
+    
+    # 4. Membuat Kurva
+    t_max = tp + 10 * t03 # Simulasi sampai 10x waktu turun
+    time = np.arange(0, t_max * 60, dt_min) / 60
+    q = []
+
+    for t in time:
+        if t <= tp:
+            # Kurva Naik
+            val = qp * (t / tp)**2.4
+        elif t <= tp + t03:
+            # Kurva Turun 1
+            val = qp * 0.3**((t - tp) / t03)
+        elif t <= tp + t03 + 1.5 * t03:
+            # Kurva Turun 2
+            val = qp * 0.3**((t - tp + 0.5 * t03) / (1.5 * t03))
+        else:
+            # Kurva Turun 3
+            val = qp * 0.3**((t - tp + 1.5 * t03) / (2 * t03))
+        q.append(max(val, 0))
+
+    return pd.DataFrame({"time_min": time * 60, "uh_cms_per_mm": q})
 
 
 def scs_unit_hydrograph(
@@ -98,3 +146,4 @@ def santa_barbara_routing(
 
     runoff_df["debit_relative"] = Q
     return runoff_df
+
