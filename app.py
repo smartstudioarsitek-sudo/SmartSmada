@@ -3,6 +3,8 @@
 # Python + Streamlit
 # =========================================================
 
+
+
 import streamlit as st
 import pandas as pd
 import json
@@ -235,3 +237,33 @@ elif menu == "Save / Open Project":
     if st.button("📂 Open Project"):
         project = load_project()
         st.json(project)
+
+# app.py (Penyesuaian Menu)
+menu = st.sidebar.selectbox(
+    "Menu Utama",
+    [
+        "1. Analisis Frekuensi (SNI)",  # Baru
+        "2. Hujan Rencana & IDF",       # Baru (Mononobe)
+        "3. HSS Nakayasu",              # Baru
+        "4. Storm Sewer Design",
+        "5. Save / Open Project"
+    ]
+)
+
+# Contoh Implementasi Menu Nakayasu
+if menu == "3. HSS Nakayasu":
+    st.header("📈 Hidrograf Satuan Sintetik Nakayasu")
+    col1, col2 = st.columns(2)
+    with col1:
+        area = st.number_input("Luas DAS (ha)", 0.1, 1000.0, 50.0)
+        L = st.number_input("Panjang Sungai Utama (km)", 0.1, 100.0, 2.5)
+    with col2:
+        alpha = st.slider("Parameter Alpha (Saran PU: 1.5 - 3.0)", 1.5, 3.0, 2.0)
+        rt = st.number_input("Hujan Efektif (mm)", 1.0, 500.0, 100.0)
+
+    uh_df = hss_nakayasu(area, L, alpha=alpha)
+    # Konvolusi dengan hujan rencana
+    uh_df["debit_banjir_cms"] = uh_df["uh_cms_per_mm"] * rt
+    
+    st.line_chart(uh_df, x="time_min", y="debit_banjir_cms")
+    st.dataframe(uh_df)
